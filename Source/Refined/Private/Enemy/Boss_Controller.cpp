@@ -3,22 +3,23 @@
 
 #include "Enemy/Boss_Controller.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
+#include "UObject/ConstructorHelpers.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "UObject/ConstructorHelpers.h"
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Character/MCharacter.h"
+
 //put the ai boss here
 
 
 
 ABoss_Controller::ABoss_Controller(const FObjectInitializer& ObjectInitializer)
 {
-	static ConstructorHelpers::FObjectFinder<UBehaviorTree> obj(TEXT("BehaviorTree'/Game/Enemy/Boss_BT.Boss_BT' "));
+	static ConstructorHelpers::FObjectFinder<UBehaviorTree>obj(TEXT("BehaviorTree'/Game/Enemy/Boss_BT.Boss_BT'"));
 	if (obj.Succeeded())
 	{
-		bTree = obj.Object;
+		bTree = obj.Object; 
 	}
 
 	BTC = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehavioralComp"));

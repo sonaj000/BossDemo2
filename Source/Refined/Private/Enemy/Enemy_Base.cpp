@@ -5,6 +5,7 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 
+
 // Sets default values
 AEnemy_Base::AEnemy_Base()
 {
@@ -43,6 +44,15 @@ void AEnemy_Base::RangeAttack()
 	if (RangeMontage)
 	{
 		PlayAnimMontage(RangeMontage, 1.5f, FName(*Name));
+	}
+}
+
+void AEnemy_Base::CloseAreaAttack()
+{
+	FString Name = "CloseArea";
+	if (TestMontage)
+	{
+		PlayAnimMontage(TestMontage, 1.5f, FName(*Name));
 	}
 }
 

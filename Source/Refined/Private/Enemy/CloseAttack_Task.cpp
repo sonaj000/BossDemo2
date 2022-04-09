@@ -19,11 +19,11 @@ EBTNodeResult::Type UCloseAttack_Task::ExecuteTask(UBehaviorTreeComponent& owner
 	AEnemy_Base* B = Cast<AEnemy_Base>(owner.GetAIOwner()->GetPawn());
 	if (Boss)
 	{
-		CharLoc = Boss->Holder->GetActorLocation();
+		CharLoc = Boss->Holder->GetActorLocation() + Boss->Holder->GetActorForwardVector()*5;
 		FRotator Turn = UKismetMathLibrary::FindLookAtRotation(B->GetActorLocation(), CharLoc);
 		B->SetActorRotation(Turn);
 		B->GetCharacterMovement()->MaxWalkSpeed = 5000;
-		Boss->MoveToActor(Boss->Holder);
+		//B->CloseAttack();
 		//not working
 		//move to and change movement speed
 	}

@@ -7,9 +7,9 @@
 #include "RangedOrb.generated.h"
 
 class UNiagaraSystem;
-class USphereComponent;
 class UNiagaraComponent;
 class UNiagaraFunctionLibrary;
+class UBoxComponent;
 
 UCLASS()
 class REFINED_API ARangedOrb : public AActor
@@ -25,7 +25,7 @@ public:
 		UStaticMeshComponent* Orb;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
-		USphereComponent* HitBox;
+		UBoxComponent* HitBox;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
 		UNiagaraSystem* OrbExplosion;
@@ -34,10 +34,18 @@ public:
 	UPROPERTY()
 		UNiagaraFunctionLibrary* Test;
 
+	UPROPERTY(EditAnywhere)
+		float LifeTime;
+
+	UPROPERTY(EditAnywhere)
+		float ExplosionDelay;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	UFUNCTION()
+		void SpawnExplosion();
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

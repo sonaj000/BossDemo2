@@ -4,7 +4,7 @@
 #include "Enemy/RangedOrb.h"
 #include "NiagaraComponent.h"
 #include "NiagaraFunctionLibrary.h"
-#include "Components/SphereComponent.h"
+#include "Components/BoxComponent.h"
 
 
 
@@ -17,8 +17,11 @@ ARangedOrb::ARangedOrb()
 	Orb = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Orb"));
 	RootComponent = Orb;
 
-	HitBox = CreateDefaultSubobject<USphereComponent>(TEXT("Sphere HitBox"));
+	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Cube HitBox"));
 	HitBox->SetupAttachment(RootComponent);
+
+	LifeTime = 1.0f;
+	ExplosionDelay = 0.0f;
 
 }
 
@@ -26,11 +29,17 @@ ARangedOrb::ARangedOrb()
 void ARangedOrb::BeginPlay()
 {
 	Super::BeginPlay();
+	SetLifeSpan(LifeTime);
+	FTimerHandle Explode;
+	GetWorld()->GetTimerManager().SetTimer(Explode, this, &ARangedOrb::SpawnExplosion, ExplosionDelay, false);
+}
+
+void ARangedOrb::SpawnExplosion()
+{
 	if (OrbExplosion)
 	{
 		UNiagaraComponent* WeaponLaser = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), OrbExplosion, GetActorLocation(), GetActorRotation());
 	}
-	SetLifeSpan(1.5f);
 }
 
 // Called every frame

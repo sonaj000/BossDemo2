@@ -26,6 +26,9 @@ public:
 		void CloseAttack();
 	UFUNCTION()
 		void RangeAttack();
+	UFUNCTION()
+		void CloseAreaAttack();
+
 
 
 protected:

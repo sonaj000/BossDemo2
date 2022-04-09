@@ -23,7 +23,7 @@ EBTNodeResult::Type URangedAttack::ExecuteTask(UBehaviorTreeComponent& owner, ui
 	{
 		B->RangeAttack();
 		SpawnLoc = Boss->Holder->GetActorLocation();
-		UNiagaraComponent* CircleThing = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CircleIndicator, FVector(SpawnLoc.X, SpawnLoc.Y,21.0f), FRotator(0,0,0));
+		UNiagaraComponent* CircleThing = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), CircleIndicator, FVector(SpawnLoc.X, SpawnLoc.Y,21.0f), FRotator(0,0,0.0f));
 		GetWorld()->GetTimerManager().SetTimer(Pause, this, &URangedAttack::SpawnAttack, 0.75f, false);
 	}
 	else
@@ -40,6 +40,6 @@ void URangedAttack::SpawnAttack()
 	FActorSpawnParameters SpawnerParams;
 	SpawnerParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-	ARangedOrb* Attack = GetWorld()->SpawnActor<ARangedOrb>(RB, SpawnLoc, FRotator(0, 0, 0), SpawnerParams);
+	ARangedOrb* Attack = GetWorld()->SpawnActor<ARangedOrb>(RB, SpawnLoc, FRotator(0, 0, 90.0f), SpawnerParams);
 }
 
