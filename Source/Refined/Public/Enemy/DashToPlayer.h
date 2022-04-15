@@ -31,9 +31,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Category = "Search")
 		FVector RandomLocation;
 
-protected:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite,Category = "Search")
-		float search_radius = 1500.0f;
 
 
 	

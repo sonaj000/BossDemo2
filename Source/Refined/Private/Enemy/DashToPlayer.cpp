@@ -11,7 +11,6 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "Enemy/Enemy_Base.h"
 #include "BehaviorTree/BlackboardComponent.h"
-#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
