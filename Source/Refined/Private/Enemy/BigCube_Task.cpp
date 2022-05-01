@@ -24,6 +24,7 @@ EBTNodeResult::Type UBigCube_Task::ExecuteTask(UBehaviorTreeComponent& owner, ui
 	AEnemy_Base* B = Cast<AEnemy_Base>(owner.GetAIOwner()->GetPawn());
 	if (B)
 	{
+		B->CloseAttack();
 		TArray<FVector>Spawns;
 		FVector Current = B->GetActorLocation();
 		Spawns.Add(Current + FVector(0, 0, 400.0f));

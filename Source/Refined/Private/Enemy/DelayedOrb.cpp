@@ -9,6 +9,7 @@ ADelayedOrb::ADelayedOrb()
 }
 void ADelayedOrb::Tick(float DeltaTime)
 {
+	Super::Tick(DeltaTime);
 	this->SetActorRotation(GetActorRotation() + FRotator(0, 15, 0));
-	UE_LOG(LogTemp, Warning, TEXT("thing is spinning"));
+
 }
