@@ -18,17 +18,15 @@ ARangedOrb::ARangedOrb()
 	Orb = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Orb"));
 	SetRootComponent(Orb);
 
-	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Cube HitBox"));
+	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("The HitBox"));
 	HitBox->SetupAttachment(RootComponent);
 	HitBox->SetBoundsScale(1.5);
 
 	HitBox->OnComponentBeginOverlap.AddDynamic(this, &ARangedOrb::BeginOverLap);
-	HitBox->OnComponentEndOverlap.AddDynamic(this, &ARangedOrb::EndOverLap);
 
 	LifeTime = 1.0f;
 	ExplosionDelay = 0.0f;
 
-	bCanDamage = false;
 }
 
 // Called when the game starts or when spawned
@@ -57,32 +55,25 @@ void ARangedOrb::Tick(float DeltaTime)
 
 void ARangedOrb::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (!bCanDamage)
+
+	if (OtherActor != NULL && OtherActor != this && OtherActor->IsA(AMCharacter::StaticClass()))
 	{
-		bCanDamage = true;
-		if (OtherActor != NULL && OtherActor != this && OtherActor->IsA(AMCharacter::StaticClass()))
+		UE_LOG(LogTemp, Warning, TEXT("overlap"));
+		FRotator LaunchDirection = OtherActor->GetActorRotation();
+		LaunchDirection.Pitch = 90.0f;
+		FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -1750;
+
+		AMCharacter* Recasted = Cast<AMCharacter>(OtherActor);
+		if (Recasted)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("overlap"));
-			FRotator LaunchDirection = OtherActor->GetActorRotation();
-			LaunchDirection.Pitch = 90.0f;
-			FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -1750;
-
-			AMCharacter* Recasted = Cast<AMCharacter>(OtherActor);
-			if (Recasted)
-			{
-				Recasted->LaunchCharacter(LaunchVelocity, true, true);
-			}
-
+			UE_LOG(LogTemp, Warning, TEXT("destroy"));
+			Recasted->LaunchCharacter(LaunchVelocity, true, true);
+			Destroy();
 		}
 
 	}
 
+
 }
 
-void ARangedOrb::EndOverLap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
-{
-	bCanDamage = false;
-	UE_LOG(LogTemp, Warning, TEXT("end"));
-	Destroy();
-}
 

@@ -9,6 +9,7 @@
 #include "Perception/AIPerceptionComponent.h"
 #include "Perception/AISenseConfig_Sight.h"
 #include "Character/MCharacter.h"
+#include "Enemy/Enemy_Base.h"
 
 //put the ai boss here
 
@@ -16,11 +17,6 @@
 
 ABoss_Controller::ABoss_Controller(const FObjectInitializer& ObjectInitializer)
 {
-	static ConstructorHelpers::FObjectFinder<UBehaviorTree>obj(TEXT("BehaviorTree'/Game/Enemy/Boss_BT.Boss_BT'"));
-	if (obj.Succeeded())
-	{
-		bTree = obj.Object; 
-	}
 
 	BTC = ObjectInitializer.CreateDefaultSubobject<UBehaviorTreeComponent>(this, TEXT("BehavioralComp"));
 	BBC = ObjectInitializer.CreateDefaultSubobject<UBlackboardComponent>(this, TEXT("BlackboardComp"));
@@ -48,16 +44,19 @@ ABoss_Controller::ABoss_Controller(const FObjectInitializer& ObjectInitializer)
 void ABoss_Controller::BeginPlay()
 {
 	Super::BeginPlay();
-	RunBehaviorTree(bTree);
-	BTC->StartTree(*bTree);
+
 }
 
 void ABoss_Controller::OnPossess(APawn* inPawn)
 {
 	Super::OnPossess(inPawn);
-	if (BBC)
+	
+	AEnemy_Base* chr = Cast<AEnemy_Base>(inPawn);
+	if (chr != nullptr && chr->TreeAsset != nullptr)
 	{
-		BBC->InitializeBlackboard(*bTree->BlackboardAsset);
+		BBC->InitializeBlackboard(*chr->TreeAsset->BlackboardAsset);
+		RunBehaviorTree(chr->TreeAsset);
+		BTC->StartTree(*chr->TreeAsset);
 	}
 }
 

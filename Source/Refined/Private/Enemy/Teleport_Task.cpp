@@ -32,7 +32,7 @@ EBTNodeResult::Type UTeleport_Task::ExecuteTask(UBehaviorTreeComponent& owner, u
 	if (NavArea)
 	{
 		TPLoc = NavArea->GetRandomReachablePointInRadius(this, NavArea->GetWorldBounds().GetCenter(), SearchRadius);
-		UNiagaraComponent* Tele = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(),TPEffect, Curr - FVector(0, 0, 30.0f), FRotator(0, 0, 0.0f), FVector(2.0, 2.0, 2.0f));
+		UNiagaraComponent* Tele = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(),TPEffect, Curr - FVector(0, 0, 30.0f), FRotator(0, 0, 0.0f), FVector(2.0, 2.0, 5.0f));
 		B->SetActorLocation(TPLoc);
 	}
 	else

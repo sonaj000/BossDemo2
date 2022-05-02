@@ -27,7 +27,7 @@ public:
 	UPROPERTY(Transient)
 		UBehaviorTreeComponent* BTC;
 
-	UPROPERTY(EditInstanceOnly, BlueprintReadWrite, Category = "AI")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AI")
 		UBehaviorTree* bTree;
 
 	UPROPERTY(Transient)
