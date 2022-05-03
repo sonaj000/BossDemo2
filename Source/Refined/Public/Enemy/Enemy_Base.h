@@ -28,7 +28,13 @@ public:
 		UAudioComponent* CloseAudio;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sounds")
+		UAudioComponent* CloseAreaAudio;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sounds")
 		UAudioComponent* RangedAudio;
+
+	UFUNCTION()
+		void DelayedAudio();
 
 	UFUNCTION()
 		void CloseAttack();

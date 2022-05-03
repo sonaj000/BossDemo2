@@ -45,7 +45,7 @@ AMCharacter::AMCharacter()
 	DashR = 0.1f;
 	DashDistance = 1500.0f;
 
-	WalkSpeed = 600.0f;
+	WalkSpeed = 750.0f;
 	RunSpeed = 1100.0f;
 
 }

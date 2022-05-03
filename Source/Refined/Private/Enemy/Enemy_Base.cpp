@@ -34,7 +34,12 @@ AEnemy_Base::AEnemy_Base()
 	RangedAudio->SetupAttachment(RootComponent);
 	RangedAudio->bAutoActivate = false;
 
+	CloseAreaAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Close Ranged Component"));
+	CloseAreaAudio->SetupAttachment(RootComponent);
+	CloseAreaAudio->bAutoActivate = false;
+
 }
+
 
 void AEnemy_Base::CloseAttack()
 {
@@ -51,17 +56,24 @@ void AEnemy_Base::CloseAttack()
 
 }
 
+void AEnemy_Base::DelayedAudio()
+{
+	if (RangedAudio != nullptr)
+	{
+		RangedAudio->Play();
+	}
+}
+
 void AEnemy_Base::RangeAttack()
 {
 	FString Name = "Boss_Ranged";
 	if (RangeMontage)
 	{
 		PlayAnimMontage(RangeMontage, 1.5f, FName(*Name));
+		FTimerHandle RA;
+		GetWorld()->GetTimerManager().SetTimer(RA, this, &AEnemy_Base::DelayedAudio, 0.5f, false);
 	}
-	if (RangedAudio != nullptr)
-	{
-		RangedAudio->Play();
-	}
+
 }
 
 void AEnemy_Base::CloseAreaAttack()
@@ -70,6 +82,10 @@ void AEnemy_Base::CloseAreaAttack()
 	if (TestMontage)
 	{
 		PlayAnimMontage(TestMontage, 1.5f, FName(*Name));
+		if (CloseAreaAudio != nullptr)
+		{
+			CloseAreaAudio->Play();
+		}
 	}
 }
 

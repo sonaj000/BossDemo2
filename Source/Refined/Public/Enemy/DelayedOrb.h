@@ -18,5 +18,7 @@ public:
 	ADelayedOrb();
 
 	virtual void Tick(float DeltaTime) override;
+
+	virtual void BeginOverLap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 	
 };

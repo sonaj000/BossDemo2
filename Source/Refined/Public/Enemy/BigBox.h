@@ -30,6 +30,8 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		float DelayMove;
+
+		virtual void BeginOverLap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult) override;
 protected:
 
 	virtual void BeginPlay() override;
