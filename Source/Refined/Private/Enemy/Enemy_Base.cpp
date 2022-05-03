@@ -4,6 +4,7 @@
 #include "Enemy/Enemy_Base.h"
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
+#include "Components/AudioComponent.h"
 
 
 // Sets default values
@@ -25,6 +26,14 @@ AEnemy_Base::AEnemy_Base()
 		RangeMontage = RangeMontageObject.Object;
 	}
 
+	CloseAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Close Audio Component"));
+	CloseAudio->SetupAttachment(RootComponent);
+	CloseAudio->bAutoActivate = false;
+
+	RangedAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Ranged Audio Component"));
+	RangedAudio->SetupAttachment(RootComponent);
+	RangedAudio->bAutoActivate = false;
+
 }
 
 void AEnemy_Base::CloseAttack()
@@ -35,6 +44,10 @@ void AEnemy_Base::CloseAttack()
 		PlayAnimMontage(TestMontage, 1.5f, FName(*MontageSection));
 		UE_LOG(LogTemp, Warning, TEXT("this is happening"));
 	}
+	if (CloseAudio != nullptr)
+	{
+		CloseAudio->Play();
+	}
 
 }
 
@@ -44,6 +57,10 @@ void AEnemy_Base::RangeAttack()
 	if (RangeMontage)
 	{
 		PlayAnimMontage(RangeMontage, 1.5f, FName(*Name));
+	}
+	if (RangedAudio != nullptr)
+	{
+		RangedAudio->Play();
 	}
 }
 

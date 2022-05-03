@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "Enemy_Base.generated.h"
 
+class UAudioComponent;
 class UBehaviorTree;
 UCLASS()
 class REFINED_API AEnemy_Base : public ACharacter
@@ -22,6 +23,13 @@ public:
 		UAnimMontage* TestMontage;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 		UAnimMontage* RangeMontage;
+	// Audio components
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sounds")
+		UAudioComponent* CloseAudio;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sounds")
+		UAudioComponent* RangedAudio;
+
 	UFUNCTION()
 		void CloseAttack();
 	UFUNCTION()

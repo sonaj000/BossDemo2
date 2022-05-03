@@ -38,8 +38,9 @@ public:
 	UBlackboardComponent* get_blackboard() const;
 
 	//Perception setup
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable)
 		void OnPawnDetected(const TArray<AActor*>& DetectedPawns);
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "AI")
 		float BossSightRadius = 2000.0f;
 
