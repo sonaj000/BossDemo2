@@ -37,15 +37,14 @@ void ACloseBox::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 {
 	if (OtherActor != NULL && OtherActor != this && OtherActor->IsA(AMCharacter::StaticClass()))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("overlap"));
-		FRotator LaunchDirection = OtherActor->GetActorRotation();
-		LaunchDirection.Pitch = 90.0f;
-		FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -1750;
-
 		AMCharacter* Recasted = Cast<AMCharacter>(OtherActor);
-		if (Recasted)
+		if (Recasted && !Recasted->bisDash)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("destroy"));
+			UE_LOG(LogTemp, Warning, TEXT("overlap"));
+			FRotator LaunchDirection = OtherActor->GetActorRotation();
+			LaunchDirection.Pitch = 90.0f;
+			FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -1750;
 			Recasted->LaunchCharacter(LaunchVelocity, true, true);
 			FTimerHandle Kill;
 			GetWorld()->GetTimerManager().SetTimer(Kill, this, &ACloseBox::D, 0.1f, false);

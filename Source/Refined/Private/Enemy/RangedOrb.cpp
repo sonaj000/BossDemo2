@@ -59,14 +59,13 @@ void ARangedOrb::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 	if (OtherActor != NULL && OtherActor != this && OtherActor->IsA(AMCharacter::StaticClass()))
 	{
 		UE_LOG(LogTemp, Warning, TEXT("overlap"));
-		FRotator LaunchDirection = OtherActor->GetActorRotation();
-		LaunchDirection.Pitch = 90.0f;
-		FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -2500;
-
 		AMCharacter* Recasted = Cast<AMCharacter>(OtherActor);
-		if (Recasted)
+		if (Recasted && !Recasted->bisDash)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("destroy"));
+			FRotator LaunchDirection = OtherActor->GetActorRotation();
+			LaunchDirection.Pitch = 90.0f;
+			FVector LaunchVelocity = OtherActor->GetActorUpVector() * 1000;
 			Recasted->LaunchCharacter(LaunchVelocity, true, true);
 			FTimerHandle Kill;
 			GetWorld()->GetTimerManager().SetTimer(Kill, this, &ARangedOrb::End, 0.5f, false);

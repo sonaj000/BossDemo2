@@ -9,6 +9,8 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/AudioComponent.h"
 
 // Sets default values
 AMCharacter::AMCharacter()
@@ -38,15 +40,22 @@ AMCharacter::AMCharacter()
 	CameraComp->SetupAttachment(SpringArm, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	CameraComp->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	FreezeAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Freeze Audio"));
+	FreezeAudio->SetupAttachment(RootComponent);
+	FreezeAudio->bAutoActivate = false;
+
+	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMCharacter::DashOverLap);
+
 	JumpHeight = 600.0f;
 	bcanDash = true;
 	bisDash = false;
-	DashCD = 0.1f;
+	DashCD = 0.2f;
 	DashR = 0.1f;
 	DashDistance = 1500.0f;
 
 	WalkSpeed = 750.0f;
 	RunSpeed = 1100.0f;
+	bCanFreeze = true;
 
 }
 
@@ -119,7 +128,7 @@ void AMCharacter::Dodge()
 	FTimerHandle Stop;
 	if (bcanDash)
 	{
-		GetCharacterMovement()->BrakingFrictionFactor = 0.0f;//prevents friction slowing down during dash
+		GetCharacterMovement()->BrakingFrictionFactor = 0.1f;//prevents friction slowing down during dash
 
 		//instead of get forward vector we can use get last input vector. 
 		const FVector Testing = GetLastMovementInputVector().GetSafeNormal();
@@ -147,6 +156,36 @@ void AMCharacter::DashReset()
 {
 	bcanDash = true;
 	bisDash = false;
+}
+
+void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bisDash && bCanFreeze)
+	{
+		bCanFreeze = false;
+		UE_LOG(LogTemp, Warning, TEXT("stop time"));
+		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1);
+		this->CustomTimeDilation = 9.0f;
+		FTimerHandle WindTime;
+		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.5f, false);
+		FTimerHandle FreezeReset;
+		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 15.0f, false);
+		FreezeAudio->Play();
+		//play sound and spawn decal 
+	}
+
+}
+
+void AMCharacter::TimeReset()
+{
+	UE_LOG(LogTemp, Warning, TEXT("rewind"));
+	this->CustomTimeDilation = 1.0f;
+	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+}
+
+void AMCharacter::FreezeReset()
+{
+	bCanFreeze = true;
 }
 
 void AMCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)

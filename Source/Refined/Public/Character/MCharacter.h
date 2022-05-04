@@ -8,6 +8,7 @@
 
 class UCameraComponent;
 class USpringArmComponent;
+class UAudioComponent;
 
 UCLASS()
 class REFINED_API AMCharacter : public ACharacter
@@ -21,6 +22,10 @@ class REFINED_API AMCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* CameraComp;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
+		UAudioComponent* FreezeAudio;
+	
 public:
 	AMCharacter();
 
@@ -56,12 +61,15 @@ protected:
 
 	void virtual Landed(const FHitResult& Hit) override;
 
+	// dodge implementation
 	UFUNCTION()
 		void Dodge();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bcanDash;
+public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bisDash;
+protected:
 	UPROPERTY(EditAnywhere, Category = "Dash")
 		float DashDistance;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
@@ -74,6 +82,15 @@ protected:
 	UFUNCTION()
 		void DashReset();
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+		bool bCanFreeze;
+
+	UFUNCTION()
+		void DashOverLap(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	UFUNCTION()
+		void TimeReset();
+	UFUNCTION()
+		void FreezeReset();
 
 	
 
