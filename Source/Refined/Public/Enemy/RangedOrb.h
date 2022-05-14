@@ -10,6 +10,7 @@ class UNiagaraSystem;
 class UNiagaraComponent;
 class UNiagaraFunctionLibrary;
 class UBoxComponent;
+class UDamage;
 
 UCLASS()
 class REFINED_API ARangedOrb : public AActor
@@ -45,6 +46,9 @@ protected:
 
 	UFUNCTION()
 		void SpawnExplosion();
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TSubclassOf<UDamageType>RangedDamage;
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

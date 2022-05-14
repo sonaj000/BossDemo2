@@ -11,6 +11,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
+#include "Components/TimelineComponent.h"
+#include "Curves/CurveFloat.h"
+#include "HealthComp.h"
+
 
 // Sets default values
 AMCharacter::AMCharacter()
@@ -44,6 +48,9 @@ AMCharacter::AMCharacter()
 	FreezeAudio->SetupAttachment(RootComponent);
 	FreezeAudio->bAutoActivate = false;
 
+	HealthBar = CreateDefaultSubobject<UHealthComp>(TEXT("Health Bar"));
+	HealthBar->OnHealthChanged.AddDynamic(this,&AMCharacter::OnHealthChanged);
+
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMCharacter::DashOverLap);
 
 	JumpHeight = 600.0f;
@@ -56,13 +63,20 @@ AMCharacter::AMCharacter()
 	WalkSpeed = 750.0f;
 	RunSpeed = 1100.0f;
 	bCanFreeze = true;
-
 }
 
 void AMCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	JumpCounter = 0;
+	
+	//idk how effective this is. 
+
+}
+
+void AMCharacter::Tick(float DeltaTime)
+{
+	Time.TickTimeline(DeltaTime);
 }
 
 void AMCharacter::MoveForward(float Value)
@@ -149,7 +163,7 @@ void AMCharacter::DashStop()
 	FTimerHandle DashS;
 	GetCharacterMovement()->StopMovementImmediately();
 	GetWorldTimerManager().SetTimer(DashS, this, &AMCharacter::DashReset, DashR, false);
-	GetCharacterMovement()->BrakingFrictionFactor = 0.5f;
+	GetCharacterMovement()->BrakingFrictionFactor = 0.1f;
 }
 
 void AMCharacter::DashReset()
@@ -165,11 +179,12 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 		bCanFreeze = false;
 		UE_LOG(LogTemp, Warning, TEXT("stop time"));
 		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1);
-		this->CustomTimeDilation = 9.0f;
+		//ugameplaystatics::Getactors of class enemy and class ranged orb will slow down enemy and all projectiles
+		this->CustomTimeDilation = 10.0f;
 		FTimerHandle WindTime;
-		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.5f, false);
+		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.1f, false);
 		FTimerHandle FreezeReset;
-		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 15.0f, false);
+		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 1.0f, false);
 		FreezeAudio->Play();
 		//play sound and spawn decal 
 	}
@@ -186,6 +201,22 @@ void AMCharacter::TimeReset()
 void AMCharacter::FreezeReset()
 {
 	bCanFreeze = true;
+}
+
+void AMCharacter::OnHealthChanged(UHealthComp* OwningHealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	if (Health <= 0.0f)
+	{
+		GetMovementComponent()->StopMovementImmediately();
+		//GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+
+		//DetachFromControllerPendingDestroy();
+
+		//SetLifeSpan(5.0f);
+		//UGameplayStatics::OpenLevel(this, FName("Menu_Map"), false);
+		//change this to death scene later
+
+	}
 }
 
 void AMCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)

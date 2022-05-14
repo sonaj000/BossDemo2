@@ -5,6 +5,7 @@
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Character/MCharacter.h"
+#include "GameFramework/DamageType.h"
 
 ABigBox::ABigBox()
 {
@@ -42,6 +43,8 @@ void ABigBox::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherAct
 			LaunchDirection.Pitch = 90.0f;
 			FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -1050 + OtherActor->GetActorUpVector() * 500;;
 			UE_LOG(LogTemp, Warning, TEXT("destroy"));
+			UGameplayStatics::ApplyDamage(Recasted, 5.0f, this->GetInstigatorController(), this, BigBoxDamage);
+			UE_LOG(LogTemp, Warning, TEXT("5 damage"));
 			Recasted->LaunchCharacter(LaunchVelocity, true, true);
 			Destroy();
 		}
@@ -60,4 +63,6 @@ void ABigBox::BeginPlay()
 
 	FTimerHandle Wait;
 	GetWorld()->GetTimerManager().SetTimer(Wait, this, &ABigBox::LaunchBox, DelayMove, false);
+
+	//set owner to enemy
 }

@@ -7,6 +7,7 @@
 #include "Components/BoxComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Character/MCharacter.h"
+#include "GameFramework/DamageType.h"
 
 
 // Sets default values
@@ -67,6 +68,7 @@ void ARangedOrb::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 			LaunchDirection.Pitch = 90.0f;
 			FVector LaunchVelocity = OtherActor->GetActorUpVector() * 1000;
 			Recasted->LaunchCharacter(LaunchVelocity, true, true);
+			UGameplayStatics::ApplyDamage(Recasted, 20.0f, this->GetInstigatorController(), this, RangedDamage);
 			FTimerHandle Kill;
 			GetWorld()->GetTimerManager().SetTimer(Kill, this, &ARangedOrb::End, 0.5f, false);
 		}

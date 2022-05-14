@@ -3,11 +3,14 @@
 
 #include "Enemy/CloseBox.h"
 #include "Character/MCharacter.h"
+#include "GameFramework/DamageType.h"
+#include "Kismet/GameplayStatics.h"
 
 ACloseBox::ACloseBox()
 {
 	bCanMove = false;
 	Delay = 1.0f;
+	bCanDamage = true;
 }
 
 void ACloseBox::Tick(float DeltaTime)
@@ -38,7 +41,7 @@ void ACloseBox::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 	if (OtherActor != NULL && OtherActor != this && OtherActor->IsA(AMCharacter::StaticClass()))
 	{
 		AMCharacter* Recasted = Cast<AMCharacter>(OtherActor);
-		if (Recasted && !Recasted->bisDash)
+		if (Recasted && !Recasted->bisDash && bCanDamage)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("destroy"));
 			UE_LOG(LogTemp, Warning, TEXT("overlap"));
@@ -46,8 +49,11 @@ void ACloseBox::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 			LaunchDirection.Pitch = 90.0f;
 			FVector LaunchVelocity = OtherActor->GetActorForwardVector() * -1750;
 			Recasted->LaunchCharacter(LaunchVelocity, true, true);
+			//boolean for damage
+			UGameplayStatics::ApplyDamage(Recasted, 20.0f, this->GetInstigatorController(), this, CloseBoxDamage);
+			bCanDamage = false;
 			FTimerHandle Kill;
-			GetWorld()->GetTimerManager().SetTimer(Kill, this, &ACloseBox::D, 0.1f, false);
+			GetWorld()->GetTimerManager().SetTimer(Kill, this, &ACloseBox::D, 0.01f, false);
 		}
 
 	}
@@ -55,5 +61,6 @@ void ACloseBox::BeginOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherA
 
 void ACloseBox::D()
 {
+	bCanDamage = true;
 	Destroy();
 }

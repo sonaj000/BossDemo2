@@ -4,11 +4,15 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Components/TimelineComponent.h"
+
 #include "MCharacter.generated.h"
 
 class UCameraComponent;
 class USpringArmComponent;
 class UAudioComponent;
+class UHealthComp;
+class UCurveFloat;
 
 UCLASS()
 class REFINED_API AMCharacter : public ACharacter
@@ -31,6 +35,8 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = "Jump")
 		float JumpHeight;
+
+
 
 protected:
 	/** Called for forwards/backward input */
@@ -66,6 +72,18 @@ protected:
 		void Dodge();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bcanDash;
+
+	UPROPERTY(EditAnywhere)
+		UCurveFloat* FloatTimer;
+
+	UPROPERTY()
+		float CurveFloatValue;
+
+	UPROPERTY()
+		float TimelineValue;
+
+	UPROPERTY()
+		FTimeline Time;
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bisDash;
@@ -91,8 +109,13 @@ protected:
 		void TimeReset();
 	UFUNCTION()
 		void FreezeReset();
-
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+		UHealthComp* HealthBar;
+	UFUNCTION()
+		void OnHealthChanged(UHealthComp* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 	
+
 
 protected:
 	// APawn interface
@@ -102,6 +125,9 @@ protected:
 
 
 public:
+
+	// Called every frame
+	virtual void Tick(float DeltaTime) override;
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return SpringArm; }
 	/** Returns FollowCamera subobject **/
