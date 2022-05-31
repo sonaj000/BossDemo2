@@ -14,6 +14,8 @@
 #include "Components/TimelineComponent.h"
 #include "Curves/CurveFloat.h"
 #include "HealthComp.h"
+#include "Enemy/RangedOrb.h"
+#include "Enemy/Enemy_Base.h"
 
 
 // Sets default values
@@ -53,7 +55,7 @@ AMCharacter::AMCharacter()
 
 	GetCapsuleComponent()->OnComponentBeginOverlap.AddDynamic(this, &AMCharacter::DashOverLap);
 
-	JumpHeight = 600.0f;
+	JumpHeight = 5000.0f;
 	bcanDash = true;
 	bisDash = false;
 	DashCD = 0.2f;
@@ -61,7 +63,7 @@ AMCharacter::AMCharacter()
 	DashDistance = 1500.0f;
 
 	WalkSpeed = 750.0f;
-	RunSpeed = 1100.0f;
+	RunSpeed = 2000.0f;
 	bCanFreeze = true;
 }
 
@@ -178,13 +180,22 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 	{
 		bCanFreeze = false;
 		UE_LOG(LogTemp, Warning, TEXT("stop time"));
-		UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1);
+		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1);
+
 		//ugameplaystatics::Getactors of class enemy and class ranged orb will slow down enemy and all projectiles
-		this->CustomTimeDilation = 10.0f;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnemy_Base::StaticClass(),TimeStore);
+		TimeStore.Add(OtherActor);
+		if (TimeStore.Num() > 0)
+		{
+			for (AActor* thing : TimeStore)
+			{
+				thing->CustomTimeDilation = 0.0f;
+			}
+		}
 		FTimerHandle WindTime;
-		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.1f, false);
+		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.2f, false);
 		FTimerHandle FreezeReset;
-		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 1.0f, false);
+		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 0.2f, false);
 		FreezeAudio->Play();
 		//play sound and spawn decal 
 	}
@@ -194,8 +205,12 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 void AMCharacter::TimeReset()
 {
 	UE_LOG(LogTemp, Warning, TEXT("rewind"));
-	this->CustomTimeDilation = 1.0f;
-	UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
+	for (AActor* thing : TimeStore)
+	{
+		thing->CustomTimeDilation = 1.0f;
+	}
+	TimeStore.Empty();
+	//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 1.0f);
 }
 
 void AMCharacter::FreezeReset()

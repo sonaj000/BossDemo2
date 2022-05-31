@@ -68,6 +68,10 @@ protected:
 	void virtual Landed(const FHitResult& Hit) override;
 
 	// dodge implementation
+
+	UPROPERTY()
+		TArray<AActor*>TimeStore;
+
 	UFUNCTION()
 		void Dodge();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
