@@ -11,11 +11,10 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/AudioComponent.h"
-#include "Components/TimelineComponent.h"
-#include "Curves/CurveFloat.h"
 #include "HealthComp.h"
 #include "Enemy/RangedOrb.h"
 #include "Enemy/Enemy_Base.h"
+#include "Character/Weapon.h"
 
 
 // Sets default values
@@ -46,6 +45,9 @@ AMCharacter::AMCharacter()
 	CameraComp->SetupAttachment(SpringArm, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	CameraComp->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	WeaponComp = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Weapon"));
+	WeaponComp->SetupAttachment(RootComponent);
+
 	FreezeAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Freeze Audio"));
 	FreezeAudio->SetupAttachment(RootComponent);
 	FreezeAudio->bAutoActivate = false;
@@ -62,6 +64,8 @@ AMCharacter::AMCharacter()
 	DashR = 0.1f;
 	DashDistance = 1500.0f;
 
+	WeaponAttachSocketName = "Test";
+
 	WalkSpeed = 750.0f;
 	RunSpeed = 2000.0f;
 	bCanFreeze = true;
@@ -71,14 +75,24 @@ void AMCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	JumpCounter = 0;
+	ComboCounter = 0;
+	bCanAttack = true;
 	
-	//idk how effective this is. 
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	CurrentWeapon = GetWorld()->SpawnActor<AWeapon>(SpawnWeapon, FVector::ZeroVector, FRotator::ZeroRotator, SpawnParams);
+	UE_LOG(LogTemp, Warning, TEXT("weapon spawned"));
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->SetOwner(this);
+		CurrentWeapon->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, WeaponAttachSocketName);
+		UE_LOG(LogTemp, Warning, TEXT("weapon attached")); //has been successfully done
+	}
 
 }
 
 void AMCharacter::Tick(float DeltaTime)
 {
-	Time.TickTimeline(DeltaTime);
 }
 
 void AMCharacter::MoveForward(float Value)
@@ -108,6 +122,66 @@ void AMCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
+}
+
+void AMCharacter::Attack()
+{
+	//note that this is only for ground and not in air
+	GetWorld()->GetTimerManager().SetTimer(AR, this, &AMCharacter::AttackReset, 1.0f, false);//delay the activation of timer reset by a second
+	FString MontageSection = FString::FromInt(ComboCounter);
+	bCanAttack = GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage);
+	if (AttackMontage && !bCanAttack && !binAir)
+	{
+		if (ComboCounter == 0)
+		{
+			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			UE_LOG(LogTemp, Warning, TEXT("montage1"));
+			ComboCounter += 1;
+		}
+		else if (ComboCounter == 1)
+		{
+			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			UE_LOG(LogTemp, Warning, TEXT("montage2"));
+			ComboCounter += 1;
+		}
+		else if (ComboCounter == 2)
+		{
+			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			UE_LOG(LogTemp, Warning, TEXT("montage2"));
+			ComboCounter = 0;
+		}
+
+	}
+	UE_LOG(LogTemp, Warning, TEXT("attacking"));
+
+}
+
+void AMCharacter::AttackReset()
+{
+	APlayerController* MController = Cast<APlayerController>(GetController());
+	if ((GetWorldTimerManager().GetTimerElapsed(AR) < 1.1f) && MController->IsInputKeyDown(FKey(EKeys::LeftMouseButton)))
+	{
+		GetWorldTimerManager().ClearTimer(AR);
+	}
+	else
+	{
+		ComboCounter = 0;
+	}
+
+}
+
+void AMCharacter::SkillLunge()
+{
+
+	FString MontageSection = "Lunge";
+	if (SkillMontage)
+	{
+		PlayAnimMontage(SkillMontage, 2.0f, FName(*MontageSection));
+		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
+	}
+	LaunchCharacter(GetActorForwardVector() * 3000, true, true);
+	UE_LOG(LogTemp, Warning, TEXT("skill"));
+
 }
 
 void AMCharacter::RunStart()
@@ -141,6 +215,8 @@ void AMCharacter::Landed(const FHitResult& Hit)
 
 void AMCharacter::Dodge()
 {
+	///stop all montages playing
+	GetMesh()->GetAnimInstance()->Montage_Stop(NULL); //dash is priority montage will overtake all other inputs
 	FTimerHandle Stop;
 	if (bcanDash)
 	{
@@ -176,10 +252,11 @@ void AMCharacter::DashReset()
 
 void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (bisDash && bCanFreeze)
+	if (bisDash && bCanFreeze && !OtherActor->IsA(AWeapon::StaticClass()))
 	{
 		bCanFreeze = false;
 		UE_LOG(LogTemp, Warning, TEXT("stop time"));
+		UE_LOG(LogTemp, Warning, TEXT("actor hit is : %s"), *OtherActor->GetName());
 		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1);
 
 		//ugameplaystatics::Getactors of class enemy and class ranged orb will slow down enemy and all projectiles
@@ -242,7 +319,8 @@ void AMCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction("Dodge", IE_Pressed, this, &AMCharacter::Dodge);
 	PlayerInputComponent->BindAction("RunStart", IE_Pressed, this, &AMCharacter::RunStart);
 	PlayerInputComponent->BindAction("RunEnd", IE_Released, this, &AMCharacter::RunEnd);
-
+	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AMCharacter::Attack);
+	PlayerInputComponent->BindAction("Skill1", IE_Pressed, this, &AMCharacter::SkillLunge);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMCharacter::MoveRight);

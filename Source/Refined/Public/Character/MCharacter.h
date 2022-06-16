@@ -4,7 +4,6 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Components/TimelineComponent.h"
 
 #include "MCharacter.generated.h"
 
@@ -12,7 +11,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class UAudioComponent;
 class UHealthComp;
-class UCurveFloat;
+class AWeapon;
 
 UCLASS()
 class REFINED_API AMCharacter : public ACharacter
@@ -26,6 +25,9 @@ class REFINED_API AMCharacter : public ACharacter
 	/** Follow camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 		class UCameraComponent* CameraComp;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Weapon, meta = (AllowPrivateAccess = "true"))
+		USkeletalMeshComponent* WeaponComp;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sounds")
 		UAudioComponent* FreezeAudio;
@@ -44,6 +46,30 @@ protected:
 
 	/** Called for side to side input */
 	void MoveRight(float Value);
+
+	UFUNCTION()
+		void Attack();
+
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
+		int ComboCounter;
+
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
+		bool bCanAttack;
+
+	UFUNCTION()
+		void AttackReset();
+
+	UPROPERTY()
+		FTimerHandle AR;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+		UAnimMontage* AttackMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
+		UAnimMontage* SkillMontage;
+
+	UFUNCTION()
+		void SkillLunge();
 
 	UFUNCTION()
 		void RunStart();
@@ -76,18 +102,16 @@ protected:
 		void Dodge();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bcanDash;
-
-	UPROPERTY(EditAnywhere)
-		UCurveFloat* FloatTimer;
-
+protected:
 	UPROPERTY()
-		float CurveFloatValue;
+		AWeapon* CurrentWeapon;
 
-	UPROPERTY()
-		float TimelineValue;
+	UPROPERTY(EditDefaultsOnly, Category = "Player")
+		TSubclassOf<AWeapon>SpawnWeapon;
 
-	UPROPERTY()
-		FTimeline Time;
+	UPROPERTY(VisibleDefaultsOnly, Category = "Player")
+		FName WeaponAttachSocketName;
+
 public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bisDash;
