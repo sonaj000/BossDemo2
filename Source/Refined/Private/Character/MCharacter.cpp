@@ -15,6 +15,8 @@
 #include "Enemy/RangedOrb.h"
 #include "Enemy/Enemy_Base.h"
 #include "Character/Weapon.h"
+#include "GameFramework/DamageType.h"
+#include "DrawDebugHelpers.h"
 
 
 // Sets default values
@@ -127,26 +129,69 @@ void AMCharacter::MoveRight(float Value)
 void AMCharacter::Attack()
 {
 	//note that this is only for ground and not in air
-	GetWorld()->GetTimerManager().SetTimer(AR, this, &AMCharacter::AttackReset, 1.0f, false);//delay the activation of timer reset by a second
+	TArray<FHitResult>EnemiesHit;
+	FVector Start = GetActorForwardVector();
+	FVector End = GetActorLocation() + GetActorForwardVector() * 50;
+	FCollisionQueryParams QueryParams;
+
+	QueryParams.AddIgnoredActor(this); // ignore the character
+	QueryParams.AddIgnoredActor(CurrentWeapon);
+	QueryParams.bTraceComplex = true;
+	QueryParams.bReturnPhysicalMaterial = true;
+	
+	FCollisionObjectQueryParams Objectparams;
+	
+	Objectparams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
+	
+
+	const FVector BoxCoord = FVector(100, 100, 100);
+	FCollisionShape MyBox = FCollisionShape::MakeBox(BoxCoord);
+	
+	//set character movement to zero in order to stop movement while attacking
+	GetCharacterMovement()->MaxWalkSpeed = 0;
+	GetWorld()->GetTimerManager().SetTimer(AR, this, &AMCharacter::AttackReset, 0.7f, false);//delay the activation of timer reset by a second
 	FString MontageSection = FString::FromInt(ComboCounter);
+	FString DownAttack = "down";
 	bCanAttack = GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage);
-	if (AttackMontage && !bCanAttack && !binAir)
+	if (binAir && !bCanAttack && AttackMontage)
 	{
+		LaunchCharacter(GetActorUpVector() * -1000, true, true);
+		PlayAnimMontage(AttackMontage, 2.5f, FName(*DownAttack));
+	}
+
+	else if (AttackMontage && !bCanAttack && !binAir)
+	{
+		bool isHit = GetWorld()->SweepMultiByObjectType(EnemiesHit, End, End, FQuat::Identity, Objectparams, MyBox);
+		DrawDebugBox(GetWorld(), End, BoxCoord, FColor::Purple, true, -1, 0, 3);
+
+		if (isHit)
+		{
+			for (auto& Hit : EnemiesHit)
+			{
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Blue, FString::Printf(TEXT("Hit Result : %s "), *Hit.Actor->GetName()));
+					AActor* HitTarget = Hit.GetActor();
+					UGameplayStatics::ApplyDamage(HitTarget, 5.0f, CurrentWeapon->GetInstigatorController(), this, NAD);
+				}
+			}
+		}
+
 		if (ComboCounter == 0)
 		{
-			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 2.5f, FName(*MontageSection));
 			UE_LOG(LogTemp, Warning, TEXT("montage1"));
 			ComboCounter += 1;
 		}
 		else if (ComboCounter == 1)
 		{
-			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 2.5f, FName(*MontageSection));
 			UE_LOG(LogTemp, Warning, TEXT("montage2"));
 			ComboCounter += 1;
 		}
 		else if (ComboCounter == 2)
 		{
-			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 2.5f, FName(*MontageSection));
 			UE_LOG(LogTemp, Warning, TEXT("montage2"));
 			ComboCounter = 0;
 		}
@@ -158,6 +203,7 @@ void AMCharacter::Attack()
 
 void AMCharacter::AttackReset()
 {
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	APlayerController* MController = Cast<APlayerController>(GetController());
 	if ((GetWorldTimerManager().GetTimerElapsed(AR) < 1.1f) && MController->IsInputKeyDown(FKey(EKeys::LeftMouseButton)))
 	{
@@ -167,7 +213,6 @@ void AMCharacter::AttackReset()
 	{
 		ComboCounter = 0;
 	}
-
 }
 
 void AMCharacter::SkillLunge()

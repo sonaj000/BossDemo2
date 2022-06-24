@@ -12,6 +12,8 @@ class USpringArmComponent;
 class UAudioComponent;
 class UHealthComp;
 class AWeapon;
+class UDamageType;
+
 
 UCLASS()
 class REFINED_API AMCharacter : public ACharacter
@@ -61,6 +63,10 @@ protected:
 
 	UPROPERTY()
 		FTimerHandle AR;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
+		TSubclassOf<UDamageType>NAD;
+
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 		UAnimMontage* AttackMontage;
