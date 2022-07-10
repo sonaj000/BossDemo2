@@ -5,6 +5,7 @@
 #include "BehaviorTree/BehaviorTreeComponent.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "Components/AudioComponent.h"
+#include "HealthComp.h"
 
 
 // Sets default values
@@ -26,6 +27,8 @@ AEnemy_Base::AEnemy_Base()
 		RangeMontage = RangeMontageObject.Object;
 	}
 
+
+
 	CloseAudio = CreateDefaultSubobject<UAudioComponent>(TEXT("Close Audio Component"));
 	CloseAudio->SetupAttachment(RootComponent);
 	CloseAudio->bAutoActivate = false;
@@ -38,6 +41,8 @@ AEnemy_Base::AEnemy_Base()
 	CloseAreaAudio->SetupAttachment(RootComponent);
 	CloseAreaAudio->bAutoActivate = false;
 
+	HealthBar = CreateDefaultSubobject<UHealthComp>(TEXT("Health Bar"));
+	HealthBar->OnHealthChanged.AddDynamic(this, &AEnemy_Base::OnHealthChanged);
 }
 
 
@@ -94,6 +99,17 @@ void AEnemy_Base::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void AEnemy_Base::OnHealthChanged(UHealthComp* OwningHealthComp, float Health, float HealthDelta, const UDamageType* DamageType, AController* InstigatedBy, AActor* DamageCauser)
+{
+	
+	FString MontageSection = "Hit";
+	if (TestMontage)
+	{
+		PlayAnimMontage(TestMontage, 1.5f, FName(*MontageSection));
+		UE_LOG(LogTemp, Warning, TEXT("this is happening"));
+	}
 }
 
 // Called every frame

@@ -17,6 +17,7 @@
 #include "Character/Weapon.h"
 #include "GameFramework/DamageType.h"
 #include "DrawDebugHelpers.h"
+#include "Kismet/KismetMathLibrary.h"
 
 
 // Sets default values
@@ -130,23 +131,27 @@ void AMCharacter::Attack()
 {
 	//note that this is only for ground and not in air
 	TArray<FHitResult>EnemiesHit;
+	TArray<FHitResult>EnemiesDetected;
 	FVector Start = GetActorForwardVector();
-	FVector End = GetActorLocation() + GetActorForwardVector() * 50;
+	FVector End = GetActorLocation() + GetActorForwardVector() * 100;
+	FVector Loc = this->GetActorLocation() + FVector(0, 0, 50);
 	FCollisionQueryParams QueryParams;
 
 	QueryParams.AddIgnoredActor(this); // ignore the character
 	QueryParams.AddIgnoredActor(CurrentWeapon);
 	QueryParams.bTraceComplex = true;
-	QueryParams.bReturnPhysicalMaterial = true;
 	
 	FCollisionObjectQueryParams Objectparams;
 	
+	Objectparams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
 	Objectparams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
-	
 
 	const FVector BoxCoord = FVector(100, 100, 100);
 	FCollisionShape MyBox = FCollisionShape::MakeBox(BoxCoord);
-	
+
+	const FVector DCoord = FVector(350, 350, 100);
+	FCollisionShape DetectBox = FCollisionShape::MakeBox(DCoord);
+
 	//set character movement to zero in order to stop movement while attacking
 	GetCharacterMovement()->MaxWalkSpeed = 0;
 	GetWorld()->GetTimerManager().SetTimer(AR, this, &AMCharacter::AttackReset, 0.7f, false);//delay the activation of timer reset by a second
@@ -161,9 +166,19 @@ void AMCharacter::Attack()
 
 	else if (AttackMontage && !bCanAttack && !binAir)
 	{
-		bool isHit = GetWorld()->SweepMultiByObjectType(EnemiesHit, End, End, FQuat::Identity, Objectparams, MyBox);
+		bool isHit = GetWorld()->SweepMultiByObjectType(EnemiesHit, End, End, FQuat::Identity, Objectparams, MyBox,QueryParams);
 		DrawDebugBox(GetWorld(), End, BoxCoord, FColor::Purple, true, -1, 0, 3);
 
+		bool isDetect = GetWorld()->SweepMultiByObjectType(EnemiesDetected, Loc, Loc, FQuat::Identity, Objectparams, DetectBox, QueryParams);
+		DrawDebugBox(GetWorld(), Loc, DCoord, FColor::Red, true, -1, 0, 3);
+		//look and rotate towards first enemy in the hit
+		if (EnemiesDetected.Num() > 0)
+		{
+			FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), EnemiesDetected[0].GetActor()->GetActorLocation());
+			this->SetActorRotation(Rotation);
+		}
+		//damage apply
+		UE_LOG(LogTemp,Warning, TEXT("number of enemies hit : %d"), EnemiesHit.Num())
 		if (isHit)
 		{
 			for (auto& Hit : EnemiesHit)
@@ -173,6 +188,18 @@ void AMCharacter::Attack()
 					GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Blue, FString::Printf(TEXT("Hit Result : %s "), *Hit.Actor->GetName()));
 					AActor* HitTarget = Hit.GetActor();
 					UGameplayStatics::ApplyDamage(HitTarget, 5.0f, CurrentWeapon->GetInstigatorController(), this, NAD);
+					UStaticMeshComponent* PushBack = Cast<UStaticMeshComponent>(HitTarget->GetRootComponent());
+					if (PushBack != nullptr)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("is not null"));
+						PushBack->AddImpulse(HitTarget->GetActorUpVector() * PushBack->GetMass() * 1000.0f);
+						//use launch character if we have to
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("is null"));
+					}
+
 				}
 			}
 		}
@@ -201,9 +228,10 @@ void AMCharacter::Attack()
 
 }
 
+
 void AMCharacter::AttackReset()
 {
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
 	APlayerController* MController = Cast<APlayerController>(GetController());
 	if ((GetWorldTimerManager().GetTimerElapsed(AR) < 1.1f) && MController->IsInputKeyDown(FKey(EKeys::LeftMouseButton)))
 	{
@@ -286,7 +314,7 @@ void AMCharacter::DashStop()
 	FTimerHandle DashS;
 	GetCharacterMovement()->StopMovementImmediately();
 	GetWorldTimerManager().SetTimer(DashS, this, &AMCharacter::DashReset, DashR, false);
-	GetCharacterMovement()->BrakingFrictionFactor = 0.1f;
+	GetCharacterMovement()->BrakingFrictionFactor = 8.0f;
 }
 
 void AMCharacter::DashReset()
@@ -302,7 +330,7 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 		bCanFreeze = false;
 		UE_LOG(LogTemp, Warning, TEXT("stop time"));
 		UE_LOG(LogTemp, Warning, TEXT("actor hit is : %s"), *OtherActor->GetName());
-		//UGameplayStatics::SetGlobalTimeDilation(GetWorld(), 0.1);
+
 
 		//ugameplaystatics::Getactors of class enemy and class ranged orb will slow down enemy and all projectiles
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnemy_Base::StaticClass(),TimeStore);

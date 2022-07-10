@@ -8,6 +8,8 @@
 
 class UAudioComponent;
 class UBehaviorTree;
+class UHealthComp;
+
 UCLASS()
 class REFINED_API AEnemy_Base : public ACharacter
 {
@@ -48,6 +50,12 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+		UHealthComp* HealthBar;
+
+	UFUNCTION()
+		void OnHealthChanged(UHealthComp* OwningHealthComp, float Health, float HealthDelta, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
 
 public:	
 	// Called every frame
