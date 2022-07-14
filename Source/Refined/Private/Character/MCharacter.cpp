@@ -69,7 +69,7 @@ AMCharacter::AMCharacter()
 
 	WeaponAttachSocketName = "Test";
 
-	WalkSpeed = 750.0f;
+	WalkSpeed = 600.0f;
 	RunSpeed = 2000.0f;
 	bCanFreeze = true;
 }
@@ -80,6 +80,9 @@ void AMCharacter::BeginPlay()
 	JumpCounter = 0;
 	ComboCounter = 0;
 	bCanAttack = true;
+	bCanFinish = true;
+	bCanSweep = true;
+	bCanLunge = true;
 	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -245,15 +248,77 @@ void AMCharacter::AttackReset()
 
 void AMCharacter::SkillLunge()
 {
-
 	FString MontageSection = "Lunge";
-	if (SkillMontage)
+	UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanLunge ? TEXT("true") : TEXT("false")));
+	if (SkillMontage && bCanLunge)
 	{
 		PlayAnimMontage(SkillMontage, 2.0f, FName(*MontageSection));
 		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
+		bCanLunge = false;
+		int te = 1;
+		UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanLunge ? TEXT("true") : TEXT("false")));
+		FTimerHandle LungeDelay;
+		FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &AMCharacter::SkillReset, te);
+		GetWorld()->GetTimerManager().SetTimer(LungeDelay, Delegate, 2.0f, false);
 	}
-	LaunchCharacter(GetActorForwardVector() * 3000, true, true);
-	UE_LOG(LogTemp, Warning, TEXT("skill"));
+}
+
+void AMCharacter::ChargeSweep()
+{
+	FString MontageSection = "ChargeSwing";
+	if (SkillMontage && bCanSweep)
+	{
+		PlayAnimMontage(SkillMontage, 2.0f, FName(*MontageSection));
+		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
+		bCanSweep = false;
+		int te = 2;
+		UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanSweep ? TEXT("true") : TEXT("false")));
+		FTimerHandle SweepDelay;
+		FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &AMCharacter::SkillReset, te);
+		GetWorld()->GetTimerManager().SetTimer(SweepDelay, Delegate, 2.0f, false);
+	}
+}
+
+void AMCharacter::Finisher()
+{
+	FString MontageSection = "Finisher";
+	if (SkillMontage && bCanFinish)
+	{
+		PlayAnimMontage(SkillMontage, 1.0f, FName(*MontageSection));
+		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
+		bCanFinish = false;
+		int te = 3;
+		UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanSweep ? TEXT("true") : TEXT("false")));
+		FTimerHandle FinishDelay;
+		FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &AMCharacter::SkillReset, te);
+		GetWorld()->GetTimerManager().SetTimer(FinishDelay, Delegate, 2.0f, false);
+	}
+}
+
+
+
+
+
+void AMCharacter::SkillReset(int skillnum)
+{
+	switch (skillnum)
+	{
+		case 1:
+			bCanLunge = true;
+			UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanLunge ? TEXT("true") : TEXT("false")));
+			break;
+		case 2:
+			bCanSweep = true;
+			UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanSweep ? TEXT("true") : TEXT("false")));
+			break;
+		case 3:
+			bCanFinish = true;
+			UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanFinish ? TEXT("true") : TEXT("false")));
+			break;
+	}
+
+
+
 
 }
 
@@ -394,6 +459,8 @@ void AMCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputCo
 	PlayerInputComponent->BindAction("RunEnd", IE_Released, this, &AMCharacter::RunEnd);
 	PlayerInputComponent->BindAction("Attack", IE_Pressed, this, &AMCharacter::Attack);
 	PlayerInputComponent->BindAction("Skill1", IE_Pressed, this, &AMCharacter::SkillLunge);
+	PlayerInputComponent->BindAction("Skill2", IE_Pressed, this, &AMCharacter::ChargeSweep);
+	PlayerInputComponent->BindAction("Skill3", IE_Pressed, this, &AMCharacter::Finisher);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &AMCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &AMCharacter::MoveRight);

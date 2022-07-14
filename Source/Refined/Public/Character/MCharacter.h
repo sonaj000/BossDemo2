@@ -73,10 +73,22 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Animation")
 		UAnimMontage* SkillMontage;
-
+	//skills
 	UFUNCTION()
 		void SkillLunge();
-
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
+		bool bCanLunge;
+	UFUNCTION()
+		void ChargeSweep();
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
+		bool bCanSweep;
+	UFUNCTION()
+		void Finisher();
+	UPROPERTY(VisibleAnywhere, Category = "Attack")
+		bool bCanFinish;
+	UFUNCTION()
+		void SkillReset(int skillnum);
+	//movement
 	UFUNCTION()
 		void RunStart();
 	UFUNCTION()
