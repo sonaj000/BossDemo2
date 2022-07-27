@@ -3,6 +3,9 @@
 
 #include "Character/Weapon.h"
 #include "Components/BoxComponent.h"
+#include "DrawDebugHelpers.h"
+#include "Kismet/KismetMathLibrary.h"
+#include "Enemy/Enemy_Base.h"
 
 // Sets default values
 AWeapon::AWeapon()
@@ -15,8 +18,31 @@ AWeapon::AWeapon()
 
 	HitBox = CreateDefaultSubobject<UBoxComponent>(TEXT("HitBox"));
 	HitBox->SetupAttachment(RootComponent);
+	HitBox->OnComponentBeginOverlap.AddDynamic(this, &AWeapon::WeaponTrace);
 	
 	WeaponSocketName = "WeaponSocket";
+
+	bcanTrace = false;
+}
+
+
+
+void AWeapon::WeaponTrace(UPrimitiveComponent* OverlappedComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (bcanTrace && OtherActor->IsA(AEnemy_Base::StaticClass()))
+	{
+		UStaticMeshComponent* PushBack = Cast<UStaticMeshComponent>(OtherActor->GetRootComponent());
+		if (PushBack != nullptr)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("is not null"));
+			PushBack->AddImpulse(OtherActor->GetActorForwardVector() * PushBack->GetMass() * -1000.0f);
+			//use launch character if we have to
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("is null"));
+		}
+	}
 }
 
 // Called when the game starts or when spawned

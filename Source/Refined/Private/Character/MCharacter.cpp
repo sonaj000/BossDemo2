@@ -18,6 +18,8 @@
 #include "GameFramework/DamageType.h"
 #include "DrawDebugHelpers.h"
 #include "Kismet/KismetMathLibrary.h"
+#include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 
 
 // Sets default values
@@ -170,10 +172,10 @@ void AMCharacter::Attack()
 	else if (AttackMontage && !bCanAttack && !binAir)
 	{
 		bool isHit = GetWorld()->SweepMultiByObjectType(EnemiesHit, End, End, FQuat::Identity, Objectparams, MyBox,QueryParams);
-		DrawDebugBox(GetWorld(), End, BoxCoord, FColor::Purple, true, -1, 0, 3);
+		DrawDebugBox(GetWorld(), End, BoxCoord, FColor::Purple, false, -1, 0, 3);
 
 		bool isDetect = GetWorld()->SweepMultiByObjectType(EnemiesDetected, Loc, Loc, FQuat::Identity, Objectparams, DetectBox, QueryParams);
-		DrawDebugBox(GetWorld(), Loc, DCoord, FColor::Red, true, -1, 0, 3);
+		DrawDebugBox(GetWorld(), Loc, DCoord, FColor::Red, false, -1, 0, 3);
 		//look and rotate towards first enemy in the hit
 		if (EnemiesDetected.Num() > 0)
 		{
@@ -234,7 +236,7 @@ void AMCharacter::Attack()
 
 void AMCharacter::AttackReset()
 {
-	GetCharacterMovement()->MaxWalkSpeed = RunSpeed;
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	APlayerController* MController = Cast<APlayerController>(GetController());
 	if ((GetWorldTimerManager().GetTimerElapsed(AR) < 1.1f) && MController->IsInputKeyDown(FKey(EKeys::LeftMouseButton)))
 	{
@@ -249,10 +251,55 @@ void AMCharacter::AttackReset()
 void AMCharacter::SkillLunge()
 {
 	FString MontageSection = "Lunge";
-	UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanLunge ? TEXT("true") : TEXT("false")));
+
+	TArray<FHitResult>EnemiesHit;
+	const FVector BCoord = FVector(100, 100, 100);
+	FCollisionShape HBox = FCollisionShape::MakeBox(BCoord);
+	FVector Start = GetActorForwardVector();
+	FVector End = GetActorLocation() + GetActorForwardVector() * 100;
+	FVector Loc = this->GetActorLocation() + FVector(0, 0, 50);
+	FCollisionQueryParams QueryParams;
+
+	QueryParams.AddIgnoredActor(this); // ignore the character
+	QueryParams.AddIgnoredActor(CurrentWeapon);
+	QueryParams.bTraceComplex = true;
+
+	FCollisionObjectQueryParams Objectparams;
+
+	Objectparams.AddObjectTypesToQuery(ECollisionChannel::ECC_Pawn);
+	Objectparams.AddObjectTypesToQuery(ECollisionChannel::ECC_WorldDynamic);
 	if (SkillMontage && bCanLunge)
 	{
 		PlayAnimMontage(SkillMontage, 2.0f, FName(*MontageSection));
+		bool isHit = GetWorld()->SweepMultiByObjectType(EnemiesHit, End, End, FQuat::Identity, Objectparams, HBox, QueryParams);
+		DrawDebugBox(GetWorld(), End, BCoord, FColor::Blue, true, -1, 0, 3);
+		//damage apply
+		if (isHit)
+		{
+			for (auto& Hit : EnemiesHit)
+			{
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor::Blue, FString::Printf(TEXT("Hit Result : %s "), *Hit.Actor->GetName()));
+					AActor* HitTarget = Hit.GetActor();
+					UGameplayStatics::ApplyDamage(HitTarget, 5.0f, CurrentWeapon->GetInstigatorController(), this, NAD);
+					UStaticMeshComponent* PushBack = Cast<UStaticMeshComponent>(HitTarget->GetRootComponent());
+					if (PushBack != nullptr)
+					{
+						UE_LOG(LogTemp, Warning, TEXT("is not null"));
+						PushBack->AddImpulse(HitTarget->GetActorUpVector() * PushBack->GetMass() * 1000.0f);
+						//use launch character if we have to
+					}
+					else
+					{
+						UE_LOG(LogTemp, Warning, TEXT("is null"));
+					}
+
+				}
+			}
+		}
+		//stuff
+		UNiagaraComponent* ConeEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Cone, this->GetActorLocation() - FVector(0,0,75), FRotator(-180, 180, -180.0f));
 		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
 		bCanLunge = false;
 		int te = 1;
@@ -269,6 +316,7 @@ void AMCharacter::ChargeSweep()
 	if (SkillMontage && bCanSweep)
 	{
 		PlayAnimMontage(SkillMontage, 2.0f, FName(*MontageSection));
+		UNiagaraComponent* ConeEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SweepEffect, this->GetActorLocation(), FRotator(90, 90, 0.0f));
 		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
 		bCanSweep = false;
 		int te = 2;
@@ -284,19 +332,20 @@ void AMCharacter::Finisher()
 	FString MontageSection = "Finisher";
 	if (SkillMontage && bCanFinish)
 	{
+		CurrentWeapon->bcanTrace = true;
 		PlayAnimMontage(SkillMontage, 1.0f, FName(*MontageSection));
+		UNiagaraComponent* Spin = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SpinEffect, this->GetActorLocation(), FRotator(-180, -180, -180.0f), FVector(2.0, 2.0, 5.0f));
+		//weapon - boolean true for linetrace or onhitcomponent
 		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
 		bCanFinish = false;
 		int te = 3;
 		UE_LOG(LogTemp, Warning, TEXT("The boolean value is %s"), (bCanSweep ? TEXT("true") : TEXT("false")));
+
 		FTimerHandle FinishDelay;
 		FTimerDelegate Delegate = FTimerDelegate::CreateUObject(this, &AMCharacter::SkillReset, te);
 		GetWorld()->GetTimerManager().SetTimer(FinishDelay, Delegate, 2.0f, false);
 	}
 }
-
-
-
 
 
 void AMCharacter::SkillReset(int skillnum)
@@ -396,7 +445,13 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 		UE_LOG(LogTemp, Warning, TEXT("stop time"));
 		UE_LOG(LogTemp, Warning, TEXT("actor hit is : %s"), *OtherActor->GetName());
 
+		FString MontageSection = "DOverlap";
+		if (AttackMontage)
+		{
+			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+		}
 
+		UNiagaraComponent* Overlap = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DashEffect, this->GetActorLocation(),FRotator::ZeroRotator, FVector(2.0, 2.0, 2.0f));
 		//ugameplaystatics::Getactors of class enemy and class ranged orb will slow down enemy and all projectiles
 		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AEnemy_Base::StaticClass(),TimeStore);
 		TimeStore.Add(OtherActor);
@@ -408,9 +463,9 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 			}
 		}
 		FTimerHandle WindTime;
-		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.2f, false);
+		GetWorld()->GetTimerManager().SetTimer(WindTime, this, &AMCharacter::TimeReset, 0.7f, false);
 		FTimerHandle FreezeReset;
-		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 0.2f, false);
+		GetWorld()->GetTimerManager().SetTimer(FreezeReset, this, &AMCharacter::FreezeReset, 0.7f, false);
 		FreezeAudio->Play();
 		//play sound and spawn decal 
 	}

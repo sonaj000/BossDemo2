@@ -13,7 +13,8 @@ class UAudioComponent;
 class UHealthComp;
 class AWeapon;
 class UDamageType;
-
+class UNiagaraFunctionLibrary;
+class UNiagaraSystem;
 
 UCLASS()
 class REFINED_API AMCharacter : public ACharacter
@@ -78,14 +79,21 @@ protected:
 		void SkillLunge();
 	UPROPERTY(VisibleAnywhere, Category = "Attack")
 		bool bCanLunge;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+		UNiagaraSystem* Cone;
 	UFUNCTION()
 		void ChargeSweep();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+		UNiagaraSystem* SweepEffect;
 	UPROPERTY(VisibleAnywhere, Category = "Attack")
 		bool bCanSweep;
 	UFUNCTION()
 		void Finisher();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+		UNiagaraSystem* SpinEffect;
 	UPROPERTY(VisibleAnywhere, Category = "Attack")
 		bool bCanFinish;
+	//skill reset cd function for all skills
 	UFUNCTION()
 		void SkillReset(int skillnum);
 	//movement
@@ -120,6 +128,8 @@ protected:
 		void Dodge();
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Dash")
 		bool bcanDash;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Component")
+		UNiagaraSystem* DashEffect;
 protected:
 	UPROPERTY()
 		AWeapon* CurrentWeapon;
