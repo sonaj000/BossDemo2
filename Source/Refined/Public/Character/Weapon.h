@@ -27,7 +27,18 @@ public:
 		FName WeaponSocketName;
 
 	UFUNCTION()
+		void WeaponT();
+	UPROPERTY()
+		FVector prevBase;
+
+	UPROPERTY()
+		FVector prevTip;
+
+	UFUNCTION()
 		void WeaponTrace(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
+	UFUNCTION()
+		void EndTrace(class UPrimitiveComponent* OverlappedComp, class AActor* OtherActor, class UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 		bool bcanTrace;

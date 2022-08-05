@@ -50,6 +50,9 @@ protected:
 	/** Called for side to side input */
 	void MoveRight(float Value);
 
+	UPROPERTY(VisibleAnywhere)
+		FRotator OrgRot;
+
 	UFUNCTION()
 		void Attack();
 
@@ -61,6 +64,9 @@ protected:
 
 	UFUNCTION()
 		void AttackReset();
+
+	UFUNCTION()
+		void MovementReset();
 
 	UPROPERTY()
 		FTimerHandle AR;

@@ -71,7 +71,7 @@ AMCharacter::AMCharacter()
 
 	WeaponAttachSocketName = "Test";
 
-	WalkSpeed = 600.0f;
+	WalkSpeed = 750.0f;
 	RunSpeed = 2000.0f;
 	bCanFreeze = true;
 }
@@ -85,6 +85,7 @@ void AMCharacter::BeginPlay()
 	bCanFinish = true;
 	bCanSweep = true;
 	bCanLunge = true;
+	OrgRot = this->GetActorRotation();
 	
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -159,7 +160,9 @@ void AMCharacter::Attack()
 
 	//set character movement to zero in order to stop movement while attacking
 	GetCharacterMovement()->MaxWalkSpeed = 0;
-	GetWorld()->GetTimerManager().SetTimer(AR, this, &AMCharacter::AttackReset, 0.7f, false);//delay the activation of timer reset by a second
+	FTimerHandle Walk;
+	GetWorld()->GetTimerManager().SetTimer(Walk, this, &AMCharacter::MovementReset, 0.2f, false);
+	GetWorld()->GetTimerManager().SetTimer(AR, this, &AMCharacter::AttackReset, 1.0f, false);//delay the activation of timer reset by a second
 	FString MontageSection = FString::FromInt(ComboCounter);
 	FString DownAttack = "down";
 	bCanAttack = GetMesh()->GetAnimInstance()->Montage_IsPlaying(AttackMontage);
@@ -180,7 +183,8 @@ void AMCharacter::Attack()
 		if (EnemiesDetected.Num() > 0)
 		{
 			FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(this->GetActorLocation(), EnemiesDetected[0].GetActor()->GetActorLocation());
-			this->SetActorRotation(Rotation);
+			FRotator fixed = FRotator(OrgRot.Pitch, Rotation.Yaw, Rotation.Roll);
+			this->SetActorRotation(fixed);
 		}
 		//damage apply
 		UE_LOG(LogTemp,Warning, TEXT("number of enemies hit : %d"), EnemiesHit.Num())
@@ -211,19 +215,19 @@ void AMCharacter::Attack()
 
 		if (ComboCounter == 0)
 		{
-			PlayAnimMontage(AttackMontage, 2.5f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 3.0f, FName(*MontageSection));
 			UE_LOG(LogTemp, Warning, TEXT("montage1"));
 			ComboCounter += 1;
 		}
 		else if (ComboCounter == 1)
 		{
-			PlayAnimMontage(AttackMontage, 2.5f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 3.0f, FName(*MontageSection));
 			UE_LOG(LogTemp, Warning, TEXT("montage2"));
 			ComboCounter += 1;
 		}
 		else if (ComboCounter == 2)
 		{
-			PlayAnimMontage(AttackMontage, 2.5f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 3.0f, FName(*MontageSection));
 			UE_LOG(LogTemp, Warning, TEXT("montage2"));
 			ComboCounter = 0;
 		}
@@ -236,7 +240,6 @@ void AMCharacter::Attack()
 
 void AMCharacter::AttackReset()
 {
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 	APlayerController* MController = Cast<APlayerController>(GetController());
 	if ((GetWorldTimerManager().GetTimerElapsed(AR) < 1.1f) && MController->IsInputKeyDown(FKey(EKeys::LeftMouseButton)))
 	{
@@ -246,6 +249,11 @@ void AMCharacter::AttackReset()
 	{
 		ComboCounter = 0;
 	}
+}
+
+void AMCharacter::MovementReset()
+{
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;
 }
 
 void AMCharacter::SkillLunge()
@@ -315,6 +323,7 @@ void AMCharacter::ChargeSweep()
 	FString MontageSection = "ChargeSwing";
 	if (SkillMontage && bCanSweep)
 	{
+		CurrentWeapon->WeaponT();
 		PlayAnimMontage(SkillMontage, 2.0f, FName(*MontageSection));
 		UNiagaraComponent* ConeEffect = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SweepEffect, this->GetActorLocation(), FRotator(90, 90, 0.0f));
 		UE_LOG(LogTemp, Warning, TEXT("skill montage"));
@@ -332,7 +341,7 @@ void AMCharacter::Finisher()
 	FString MontageSection = "Finisher";
 	if (SkillMontage && bCanFinish)
 	{
-		CurrentWeapon->bcanTrace = true;
+		CurrentWeapon->WeaponT();
 		PlayAnimMontage(SkillMontage, 1.0f, FName(*MontageSection));
 		UNiagaraComponent* Spin = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), SpinEffect, this->GetActorLocation(), FRotator(-180, -180, -180.0f), FVector(2.0, 2.0, 5.0f));
 		//weapon - boolean true for linetrace or onhitcomponent
@@ -448,7 +457,7 @@ void AMCharacter::DashOverLap(UPrimitiveComponent* OverlappedComp, AActor* Other
 		FString MontageSection = "DOverlap";
 		if (AttackMontage)
 		{
-			PlayAnimMontage(AttackMontage, 2.0f, FName(*MontageSection));
+			PlayAnimMontage(AttackMontage, 3.0f, FName(*MontageSection));
 		}
 
 		UNiagaraComponent* Overlap = UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), DashEffect, this->GetActorLocation(),FRotator::ZeroRotator, FVector(2.0, 2.0, 2.0f));
